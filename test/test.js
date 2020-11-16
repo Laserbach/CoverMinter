@@ -60,25 +60,12 @@ describe("DaiVault", function() {
 
   });
 
-  it("should allow us to swap ETH for DAI via Uniswap", async function() {
-    daiAmount = 100;
-    const path = [await uniswapRouter.WETH(), mcdAddr];
-    const [requiredEth, _] = await uniswapRouter.getAmountsIn(daiAmount, path);
-    const deadline = Math.floor(Date.now() / 1000) + 60;
-    await uniswapRouter.swapETHForExactTokens(daiAmount, path, deployer.getAddress(), deadline, {
-      value: requiredEth
-    });
-    balanceDai = await dai.balanceOf(deployer.getAddress());
-    console.log("Got some DAI in my pocket: " + balanceDai.toString());
-    assert.equal(balanceDai, "100");
-  });
-
   it("should allow us to swap ETH for DAI via Balancer (ETH - WETH - DAI)", async function() {
-    daiAmount = 100;
+    daiAmount = ethers.utils.parseEther("100");
     await balancerTrader.pay(daiAmount, {value: ethers.utils.parseEther("1")});
     balanceDai = await dai.balanceOf(deployer.getAddress());
     console.log("Got some more DAI in my pocket: " + balanceDai.toString());
-    assert.equal(balanceDai, "200");
+    assert.equal(balanceDai.toString(), daiAmount.toString());
   });
 
   it("should allow us using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens", async function() {
