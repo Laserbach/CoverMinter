@@ -1,7 +1,6 @@
 const { assert } = require("chai");
 
 const coveredProtocolAddr = "0x7cdaC79c729aa5efA85a7510e44C24C58A4eDcAF"
-const routerAddr = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const mcdAddr = "0x6b175474e89094c44da98b954eedeac495271d0f";
 const claimTokenAddr = "0x55a020a43d1c1c42c880fefb08dcec037f76f999";
 const noClaimTokenAddr = "0xc0d3d2acd35c20e991adacdc00f0bd778ca1d06d";
@@ -11,8 +10,7 @@ const balPoolAddrDaiClaim = "0x55a020a43d1c1c42c880fefb08dcec037f76f999"
 
 let deployer;
 
-// dexes
-let uniswapRouter;
+// dex
 let balancerTrader;
 let balancerTraderCover;
 
@@ -34,9 +32,6 @@ describe("DaiVault", function() {
 
   beforeEach(async () => {
     deployer = ethers.provider.getSigner(0);
-
-    const UniswapRouter = await ethers.getContractFactory('UniswapV2Router02');
-    uniswapRouter = UniswapRouter.attach(routerAddr);
 
     const BalancerTrader = await ethers.getContractFactory("BalancerTrader");
     balancerTrader = await BalancerTrader.deploy(balPoolAddrDaiWeth,mcdAddr,wethAddr);
@@ -64,8 +59,25 @@ describe("DaiVault", function() {
     daiAmount = ethers.utils.parseEther("100");
     await balancerTrader.pay(daiAmount, {value: ethers.utils.parseEther("1")});
     balanceDai = await dai.balanceOf(deployer.getAddress());
-    console.log("Got some more DAI in my pocket: " + balanceDai.toString());
-    assert.equal(balanceDai.toString(), daiAmount.toString());
+    console.log("My DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    assert.equal(ethers.utils.formatEther(balanceDai), ethers.utils.formatEther(daiAmount));
+  });
+
+  it("should allow us to change the expiration date of a coverage", async function() {
+    const owner = await protocol.owner();
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [owner]
+    });
+    const ownerSigner = await ethers.provider.getSigner(owner);
+    console.log("Owner Address: "+ownerSigner.getAddress());
+
+    const newExpiration = 1606694400 // Nov 30th
+    const exirationName = ethers.utils.formatBytes32String("2020_11_15")
+    await ownerSigner.sendTransaction(protocol.updateExpirationTimestamp(newExpiration, exirationName, 1));
+    console.log("=========");
+    console.log(protocol.getProtocolDetails());
+    console.log("=========");
   });
 
   it("should allow us using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens", async function() {
@@ -73,7 +85,8 @@ describe("DaiVault", function() {
     const txApprove = await dai.approve(coveredProtocolAddr, ethers.utils.parseEther(daiAmount.toString()));
     await txApprove.wait();
 
-    const expirationTime = 1605398400
+    // 1605398400 Nov 15th
+    const expirationTime = 1606694400 // Nov 30th
 
     const txMint = await protocol.addCover(mcdAddr, expirationTime, daiAmount)
     await txMint.wait();
