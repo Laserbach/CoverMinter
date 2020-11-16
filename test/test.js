@@ -37,7 +37,7 @@ async function setNextTimeStamp() {
 }
 
 describe("DaiVault", function() {
-  beforeEach(async () => {
+  before(async () => {
     deployer = ethers.provider.getSigner(0);
 
     await setNextTimeStamp();
