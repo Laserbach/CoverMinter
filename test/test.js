@@ -52,22 +52,14 @@ describe("DaiVault", function() {
     balancerTraderCover = await BalancerTraderCover.deploy(balPoolAddrDaiClaim,mcdAddr,claimTokenAddr);
     await balancerTraderCover.deployed();
 
-    await setNextTimeStamp();
-
     const Protocol = await ethers.getContractFactory("Protocol");
     protocol = Protocol.attach(coveredProtocolAddr);
-
-    await setNextTimeStamp();
 
     const ERC20_DAI = await ethers.getContractFactory('ERC20');
     dai = ERC20_DAI.attach(mcdAddr);
 
-    await setNextTimeStamp();
-
     const ERC20_CLAIM = await ethers.getContractFactory('ERC20');
     claim = ERC20_CLAIM.attach(claimTokenAddr);
-
-    await setNextTimeStamp();
 
     const ERC20_NOCLAIM = await ethers.getContractFactory('ERC20');
     noClaim = ERC20_NOCLAIM.attach(noClaimTokenAddr);
