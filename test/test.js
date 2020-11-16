@@ -28,34 +28,53 @@ let dai;
 let claim;
 let noClaim;
 
-describe("DaiVault", function() {
+let initialTimestamp = 1605186000;
+async function setNextTimeStamp() {
+  await hre.network.provider.request({
+    method: "evm_setNextBlockTimestamp",
+    params: [++initialTimestamp]
+  });
+}
 
+describe("DaiVault", function() {
   beforeEach(async () => {
     deployer = ethers.provider.getSigner(0);
+
+    await setNextTimeStamp();
 
     const BalancerTrader = await ethers.getContractFactory("BalancerTrader");
     balancerTrader = await BalancerTrader.deploy(balPoolAddrDaiWeth,mcdAddr,wethAddr);
     await balancerTrader.deployed();
 
+    await setNextTimeStamp();
+
     const BalancerTraderCover = await ethers.getContractFactory("BalancerTraderCover");
     balancerTraderCover = await BalancerTraderCover.deploy(balPoolAddrDaiClaim,mcdAddr,claimTokenAddr);
     await balancerTraderCover.deployed();
 
+    await setNextTimeStamp();
+
     const Protocol = await ethers.getContractFactory("Protocol");
     protocol = Protocol.attach(coveredProtocolAddr);
+
+    await setNextTimeStamp();
 
     const ERC20_DAI = await ethers.getContractFactory('ERC20');
     dai = ERC20_DAI.attach(mcdAddr);
 
+    await setNextTimeStamp();
+
     const ERC20_CLAIM = await ethers.getContractFactory('ERC20');
     claim = ERC20_CLAIM.attach(claimTokenAddr);
 
+    await setNextTimeStamp();
+
     const ERC20_NOCLAIM = await ethers.getContractFactory('ERC20');
     noClaim = ERC20_NOCLAIM.attach(noClaimTokenAddr);
-
   });
 
   it("should allow us to swap ETH for DAI via Balancer (ETH - WETH - DAI)", async function() {
+    await setNextTimeStamp();
     daiAmount = ethers.utils.parseEther("100");
     await balancerTrader.pay(daiAmount, {value: ethers.utils.parseEther("1")});
     balanceDai = await dai.balanceOf(deployer.getAddress());
@@ -63,42 +82,16 @@ describe("DaiVault", function() {
     assert.equal(ethers.utils.formatEther(balanceDai), ethers.utils.formatEther(daiAmount));
   });
 
-  it("should allow us to change the expiration date of a coverage", async function() {
-    // get onlyOwner access and funding the address
-    const owner = await protocol.owner();
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [owner]
-    });
-    const ownerSigner = await ethers.provider.getSigner(owner);
-    const ownerAddress = await ownerSigner.getAddress();
-    console.log("Owner Address: "+ownerAddress);
-
-    await ethers.provider.sendTransaction({
-            value: ethers.utils.parseEther("20.0"),
-            to: ownerAddress
-        });
-    const ownerBalance = await ownerAddress.getBalance();
-    console.log("Owner Balance: "+ethers.utils.formatEther(ownerBalance));
-
-    // updating the expiration date via owner access
-    const newExpiration = 1606694400 // Nov 30th
-    const exirationName = ethers.utils.formatBytes32String("2020_11_15")
-    await protocol.connect(ownerSigner).updateExpirationTimestamp(newExpiration, exirationName, 1);
-
-    //await ownerSigner.sendTransaction(protocol.updateExpirationTimestamp(newExpiration, exirationName, 1));
-    console.log("=========");
-    console.log(protocol.getProtocolDetails());
-    console.log("=========");
-  });
-
   it("should allow us using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens", async function() {
+    await setNextTimeStamp();
     daiAmount = 100;
     const txApprove = await dai.approve(coveredProtocolAddr, ethers.utils.parseEther(daiAmount.toString()));
     await txApprove.wait();
 
     // 1605398400 Nov 15th
-    const expirationTime = 1606694400 // Nov 30th
+    const expirationTime = 1605398400 // Nov 30th
+
+    await setNextTimeStamp();
 
     const txMint = await protocol.addCover(mcdAddr, expirationTime, daiAmount)
     await txMint.wait();
