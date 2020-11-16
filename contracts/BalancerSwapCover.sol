@@ -29,14 +29,14 @@ contract BalancerTraderCover {
 
     function sellClaim(uint sellClaimAmount) public {
         require(claimToken.balanceOf(msg.sender) >= sellClaimAmount);
-        if (claimToken.allowance(msg.sender, address(this)) < (sellClaimAmount * 10 ** 18)) {
-            claimToken.approve(address(this), sellClaimAmount * 10 ** 18);
-        }
-        require(claimToken.transferFrom(msg.sender, address(this), sellClaimAmount * 10 ** 18));
+        require(claimToken.transferFrom(msg.sender, address(this), sellClaimAmount));
         _swapClaimForDai(sellClaimAmount);
     }
 
     function _swapClaimForDai(uint sellClaimAmount) private {
+        if (claimToken.allowance(address(this), address(bPool)) < sellClaimAmount) {
+          claimToken.approve(address(bPool), sellClaimAmount);
+        }
         (uint daiAmountOut,) = PoolInterface(bPool).swapExactAmountOut(
             address(claimToken),
             sellClaimAmount,

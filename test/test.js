@@ -28,6 +28,10 @@ let dai;
 let claim;
 let noClaim;
 
+// setting the timestamp for each upcoming mined block (every Tx mines a block)
+// needed to pass the timestamp require statement in the addCover function
+// if not setting the timestamps manually the blocks are mined using
+// the timestamp coming from our local machine, which fails the addCover require statement
 let initialTimestamp = 1605186000;
 async function setNextTimeStamp() {
   await hre.network.provider.request({
@@ -41,13 +45,11 @@ describe("DaiVault", function() {
     deployer = ethers.provider.getSigner(0);
 
     await setNextTimeStamp();
-
     const BalancerTrader = await ethers.getContractFactory("BalancerTrader");
     balancerTrader = await BalancerTrader.deploy(balPoolAddrDaiWeth,mcdAddr,wethAddr);
     await balancerTrader.deployed();
 
     await setNextTimeStamp();
-
     const BalancerTraderCover = await ethers.getContractFactory("BalancerTraderCover");
     balancerTraderCover = await BalancerTraderCover.deploy(balPoolAddrDaiClaim,mcdAddr,claimTokenAddr);
     await balancerTraderCover.deployed();
@@ -80,29 +82,27 @@ describe("DaiVault", function() {
     const txApprove = await dai.approve(coveredProtocolAddr, ethers.utils.parseEther(daiAmount.toString()));
     await txApprove.wait();
 
-    // 1605398400 Nov 15th
-    const expirationTime = 1605398400 // Nov 30th
-
     await setNextTimeStamp();
-
-    const txMint = await protocol.addCover(mcdAddr, expirationTime, daiAmount)
+    const expirationTime = 1605398400 // Nov 15th
+    const txMint = await protocol.addCover(mcdAddr, expirationTime, ethers.utils.parseEther(daiAmount.toString()))
     await txMint.wait();
 
     balanceClaim = await claim.balanceOf(deployer.getAddress());
     balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
     balanceDai = await dai.balanceOf(deployer.getAddress());
-    console.log("CLAIM: " + balanceClaim.toString() + " and NOCLAIM: " + balanceNoClaim.toString());
-    console.log("New DAI balance: " + balanceDai.toString());
-    assert.equal(balanceClaim, "100");
+    console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
+    console.log("New DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    assert.equal(ethers.utils.formatEther(balanceClaim), "100.0");
   });
 
   it("should allow us selling all our minted CLAIM tokens on balancer", async function() {
-    await balancerTraderCover.sellClaim(balanceClaim);
+    await claim.approve(balancerTraderCover.getAddress(), ethers.utils.parseEther(balanceClaim.toString()));
+    await balancerTraderCover.sellClaim(ethers.utils.parseEther(balanceClaim.toString()));
     balanceClaim = await claim.balanceOf(deployer.getAddress());
     balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
     balanceDai = await dai.balanceOf(deployer.getAddress());
-    console.log("CLAIM: " + balanceClaim.toString() + " and NOCLAIM: " + balanceNoClaim.toString());
-    console.log("New DAI balance: " + balanceDai.toString());
-    assert.equal(balanceClaim, "0");
+    console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
+    console.log("Final DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    assert.equal(ethers.utils.formatEther(balanceClaim), "0.0");
   });
 });
