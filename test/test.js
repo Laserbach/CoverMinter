@@ -64,17 +64,29 @@ describe("DaiVault", function() {
   });
 
   it("should allow us to change the expiration date of a coverage", async function() {
+    // get onlyOwner access and funding the address
     const owner = await protocol.owner();
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [owner]
     });
     const ownerSigner = await ethers.provider.getSigner(owner);
-    console.log("Owner Address: "+ownerSigner.getAddress());
+    const ownerAddress = await ownerSigner.getAddress();
+    console.log("Owner Address: "+ownerAddress);
 
+    await ethers.provider.sendTransaction({
+            value: ethers.utils.parseEther("20.0"),
+            to: ownerAddress
+        });
+    const ownerBalance = await ownerAddress.getBalance();
+    console.log("Owner Balance: "+ethers.utils.formatEther(ownerBalance));
+
+    // updating the expiration date via owner access
     const newExpiration = 1606694400 // Nov 30th
     const exirationName = ethers.utils.formatBytes32String("2020_11_15")
-    await ownerSigner.sendTransaction(protocol.updateExpirationTimestamp(newExpiration, exirationName, 1));
+    await protocol.connect(ownerSigner).updateExpirationTimestamp(newExpiration, exirationName, 1);
+
+    //await ownerSigner.sendTransaction(protocol.updateExpirationTimestamp(newExpiration, exirationName, 1));
     console.log("=========");
     console.log(protocol.getProtocolDetails());
     console.log("=========");
