@@ -96,8 +96,8 @@ describe("DaiVault", function() {
   });
 
   it("should allow us selling all our minted CLAIM tokens on balancer", async function() {
-    await claim.approve(balancerTraderCover.getAddress(), ethers.utils.parseEther(balanceClaim.toString()));
-    await balancerTraderCover.sellClaim(ethers.utils.parseEther(balanceClaim.toString()));
+    await claim.approve(balancerTraderCover.address, balanceClaim);
+    await balancerTraderCover.sellClaim(balanceClaim);
     balanceClaim = await claim.balanceOf(deployer.getAddress());
     balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
     balanceDai = await dai.balanceOf(deployer.getAddress());

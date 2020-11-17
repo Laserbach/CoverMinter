@@ -28,8 +28,8 @@ contract BalancerTraderCover {
     }
 
     function sellClaim(uint sellClaimAmount) public {
-        require(claimToken.balanceOf(msg.sender) >= sellClaimAmount);
-        require(claimToken.transferFrom(msg.sender, address(this), sellClaimAmount));
+        require(claimToken.balanceOf(msg.sender) >= sellClaimAmount, "ERR_NOT_ENOUGH_BALANCE");
+        require(claimToken.transferFrom(msg.sender, address(this), sellClaimAmount), "ERR_TRANSFERFROM_FAILED");
         _swapClaimForDai(sellClaimAmount);
     }
 
@@ -37,7 +37,8 @@ contract BalancerTraderCover {
         if (claimToken.allowance(address(this), address(bPool)) < sellClaimAmount) {
           claimToken.approve(address(bPool), sellClaimAmount);
         }
-        (uint daiAmountOut,) = PoolInterface(bPool).swapExactAmountOut(
+        // require(claimToken.transferFrom(address(this), address(bPool), sellClaimAmount), "ERR_TRANSFERFROM_FAILED");
+        (uint daiAmountOut,) = PoolInterface(bPool).swapExactAmountIn(
             address(claimToken),
             sellClaimAmount,
             address(daiToken),
@@ -48,6 +49,5 @@ contract BalancerTraderCover {
             require(daiToken.transfer(msg.sender, daiToken.balanceOf(address(this))), "ERR_TRANSFER_FAILED");
         }
     }
-
     receive() external payable {}
 }
