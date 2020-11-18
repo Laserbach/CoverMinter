@@ -48,7 +48,7 @@ contract Minter {
       uint noClaimAmount = noClaimToken.balanceOf(address(this));
       require(_daiAmount == claimAmount);
 
-      // _swapClaimForDai(claimAmount, _coverageProvider);
+      _swapClaimForDai(claimAmount, _coverageProvider);
       require(noClaimToken.transfer(_coverageProviderContract, noClaimAmount), "ERR_TRANSFER_FAILED");
     }
 

@@ -8,7 +8,7 @@ const noClaimTokenAddr = "0xc0d3d2acd35c20e991adacdc00f0bd778ca1d06d";
 const noClaimHolder = "0x2d2e31965cc5d89dfa0684079b4730800c36e993";
 const wethAddr = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 const balPoolAddrDaiWeth = "0x9b208194acc0a8ccb2a8dcafeacfbb7dcc093f81";
-const balPoolAddrDaiClaim = "0x55a020a43d1c1c42c880fefb08dcec037f76f999";
+const balPoolAddrDaiClaim = "0x4e01dC41c37e420146cd39eC7C42c439d96E018F"; // https://etherscan.io/address/0x4e01dc41c37e420146cd39ec7c42c439d96e018f
 
 let deployer;
 
