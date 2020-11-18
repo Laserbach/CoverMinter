@@ -1,34 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.6;
 
-interface TokenInterface {
-    function balanceOf(address) external returns (uint);
-    function allowance(address, address) external returns (uint);
-    function approve(address, uint) external returns (bool);
-    function transfer(address, uint) external returns (bool);
-    function transferFrom(address, address, uint) external returns (bool);
-    function deposit() external payable;
-    function withdraw(uint) external;
-}
+import "./utils/Initializable.sol";
+import "./utils/Ownable.sol";
+import "./interfaces/IERC20.sol";
+import "./interfaces/ICover.sol";
 
-interface CoverInterface {
-    function redeemNoclaim() external;
-}
+contract Redeem is Initializable, Ownable {
+    IERC20 public daiToken;
+    IERC20 public noClaimToken;
+    ICover public cover;
 
-contract Redeem {
-    TokenInterface public daiToken;
-    TokenInterface public noClaimToken;
-    CoverInterface public cover;
+    // Initialize, called once
+    function initialize (
+      ICover cover_,
+      IERC20 daiToken_,
+      IERC20 noClaimToken_
+    )
+      external initializer
+    {
+      cover = cover_;
+      daiToken = daiToken_;
+      noClaimToken = noClaimToken_;
 
-    constructor(TokenInterface daiToken_, TokenInterface noClaimToken_, CoverInterface cover_) public {
-        daiToken = daiToken_;
-        noClaimToken = noClaimToken_;
-        cover = cover_;
+      initializeOwner();
     }
 
-    function redeemCollateral(address _coverageProvider, address _coverageProviderContract) external {
-      require(msg.sender == _coverageProviderContract);
-
+    function redeemCollateral(address _coverageProvider) external onlyOwner {
       uint noClaimAmount = noClaimToken.balanceOf(address(this));
       cover.redeemNoclaim();
       uint daiAmount = daiToken.balanceOf(address(this));

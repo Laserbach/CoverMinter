@@ -2,42 +2,56 @@
 pragma solidity 0.6.6;
 
 import "./utils/Ownable.sol";
-
-interface TokenInterface {
-    function balanceOf(address) external returns (uint);
-    function allowance(address, address) external returns (uint);
-    function approve(address, uint) external returns (bool);
-    function transfer(address, uint) external returns (bool);
-    function transferFrom(address, address, uint) external returns (bool);
-    function deposit() external payable;
-    function withdraw(uint) external;
-}
-
-interface MinterInterface {
-    function provideCoverage(uint, address, address) external;
-}
-
-interface RedeemInterface {
-    function redeemCollateral(address, address) external;
-}
+import "./interfaces/IERC20.sol";
+import "./interfaces/ICover.sol";
+import "./interfaces/IProtocol.sol";
+import "./interfaces/IBalancerPool.sol";
+import "./interfaces/IMint.sol";
+import "./interfaces/IRedeem.sol";
 
 contract CoverageProvider is Ownable {
-    TokenInterface public daiToken;
-    TokenInterface public noClaimToken;
-    MinterInterface public minter;
-    RedeemInterface public redeemer;
+    IERC20 public daiToken;
+    IERC20 public noClaimToken;
+    IMint public minter;
+    IRedeem public redeemer;
 
     mapping(address => uint) public balances;
 
     event Deposit(address indexed depositor, uint256 amount);
     event Redeem(address indexed redeemer, uint256 amount);
 
-    constructor(TokenInterface daiToken_, TokenInterface noClaimToken_, MinterInterface minter_, RedeemInterface redeemer_) public {
+    constructor(
+      IERC20 daiToken_,
+      IERC20 noClaimToken_,
+      IMint minter_,
+      IRedeem redeemer_,
+      IProtocol protocol,
+      IBalancerPool balancerPool,
+      ICover cover,
+      IERC20 claimToken,
+      uint48 expirationTime
+      ) public {
         daiToken = daiToken_;
         noClaimToken = noClaimToken_;
         minter = minter_;
         redeemer = redeemer_;
-        initializeOwner();
+
+        minter.initialize(
+          protocol,
+          balancerPool,
+          daiToken,
+          claimToken,
+          noClaimToken,
+          expirationTime
+          );
+
+        redeemer.initialize(
+           cover,
+           daiToken,
+           noClaimToken
+          );
+
+          initializeOwner();
     }
 
     function deposit(uint _daiAmount) external {
@@ -46,7 +60,7 @@ contract CoverageProvider is Ownable {
       }
       require(daiToken.transferFrom(msg.sender, address(minter), _daiAmount));
 
-      minter.provideCoverage(_daiAmount, msg.sender, address(this));
+      minter.provideCoverage(_daiAmount, msg.sender);
       uint noClaimAmount = noClaimToken.balanceOf(address(this));
       require(_daiAmount == noClaimAmount);
 
@@ -60,7 +74,7 @@ contract CoverageProvider is Ownable {
       balances[msg.sender] = 0;
 
       require(noClaimToken.transfer(address(redeemer), amount), "ERR_TRANSFER_FAILED");
-      redeemer.redeemCollateral(msg.sender, address(this));
+      redeemer.redeemCollateral(msg.sender);
       emit Redeem(msg.sender, amount);
     }
 
@@ -70,7 +84,7 @@ contract CoverageProvider is Ownable {
 
     function returnFunds() external onlyOwner {
         // RETURN ALL LOCKED NOCLAIM TO THEIR MINTERS:
-        
+
 
     }
 

@@ -68,17 +68,17 @@ describe("### Acquire DAI", function() {
 
     await setNextTimeStamp();
     const Minter = await ethers.getContractFactory("Minter");
-    minter = await Minter.deploy(balPoolAddrDaiClaim,mcdAddr,claimTokenAddr,noClaimTokenAddr,coveredProtocolAddr,expirationTime);
+    minter = await Minter.deploy();
     await minter.deployed();
 
     await setNextTimeStamp();
     const Redeem = await ethers.getContractFactory("Redeem");
-    redeemer = await Redeem.deploy(mcdAddr,noClaimTokenAddr,coverAddr);
+    redeemer = await Redeem.deploy();
     await redeemer.deployed();
 
     await setNextTimeStamp();
     const CoverageProvider = await ethers.getContractFactory("CoverageProvider");
-    coverageProvider = await CoverageProvider.deploy(mcdAddr,noClaimTokenAddr,minter.address,redeemer.address);
+    coverageProvider = await CoverageProvider.deploy(mcdAddr, noClaimTokenAddr, minter.address, redeemer.address, coveredProtocolAddr, balPoolAddrDaiClaim, coverAddr, claimTokenAddr, expirationTime);
     await coverageProvider.deployed();
 
     const Protocol = await ethers.getContractFactory("Protocol");
