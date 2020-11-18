@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.6;
 
+import "./utils/Ownable.sol";
+
 interface TokenInterface {
     function balanceOf(address) external returns (uint);
     function allowance(address, address) external returns (uint);
@@ -19,7 +21,7 @@ interface RedeemInterface {
     function redeemCollateral(address, address) external;
 }
 
-contract CoverageProvider {
+contract CoverageProvider is Ownable {
     TokenInterface public daiToken;
     TokenInterface public noClaimToken;
     MinterInterface public minter;
@@ -35,6 +37,7 @@ contract CoverageProvider {
         noClaimToken = noClaimToken_;
         minter = minter_;
         redeemer = redeemer_;
+        initializeOwner();
     }
 
     function deposit(uint _daiAmount) external {
@@ -56,17 +59,19 @@ contract CoverageProvider {
       require(amount > 0);
       balances[msg.sender] = 0;
 
-      if (noClaimToken.allowance(address(this), address(redeemer)) < amount) {
-        daiToken.approve(address(redeemer), amount);
-      }
-      require(daiToken.transferFrom(address(this), address(redeemer), amount));
-
+      require(noClaimToken.transfer(address(redeemer), amount), "ERR_TRANSFER_FAILED");
       redeemer.redeemCollateral(msg.sender, address(this));
       emit Redeem(msg.sender, amount);
     }
 
-    function getBalance(address _owner) public view returns (uint256) {
-        return balances[_owner];
+    function getBalance(address _depositor) external view returns (uint256) {
+        return balances[_depositor];
+    }
+
+    function returnFunds() external onlyOwner {
+        // RETURN ALL LOCKED NOCLAIM TO THEIR MINTERS:
+        
+
     }
 
     receive() external payable {}
