@@ -36,5 +36,10 @@ contract Redeem is Initializable, Ownable {
           require(daiToken.transfer(_coverageProvider, daiAmount), "ERR_TRANSFER_FAILED");
       }
     }
+
+    function destroy() external onlyOwner {
+        selfdestruct(msg.sender);
+    }
+
     receive() external payable {}
 }

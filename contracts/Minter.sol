@@ -66,5 +66,9 @@ contract Minter is Initializable, Ownable {
         }
     }
 
+    function destroy() external onlyOwner {
+        selfdestruct(msg.sender);
+    }
+
     receive() external payable {}
 }

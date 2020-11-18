@@ -16,6 +16,7 @@ contract CoverageProvider is Ownable {
     IRedeem public redeemer;
 
     mapping(address => uint) public balances;
+    address[] public addressLUT;
 
     event Deposit(address indexed depositor, uint256 amount);
     event Redeem(address indexed redeemer, uint256 amount);
@@ -66,6 +67,7 @@ contract CoverageProvider is Ownable {
 
       emit Deposit(msg.sender, _daiAmount);
       balances[msg.sender] += _daiAmount;
+      addressLUT.push(msg.sender);
     }
 
     function redeem() external {
@@ -82,10 +84,22 @@ contract CoverageProvider is Ownable {
         return balances[_depositor];
     }
 
-    function returnFunds() external onlyOwner {
-        // RETURN ALL LOCKED NOCLAIM TO THEIR MINTERS:
-
-
+    // returns all non claimed tokens and destroys the entire CoverageProvider architecture
+    function deactivate() external onlyOwner {
+        // If the contract still holds funds on behalf of depositors, send funds back
+        if(noClaimToken.balanceOf(address(this)) > 0) {
+          for(uint i = 0; addressLUT.length > i; i++){
+            address depositor = addressLUT[i];
+            uint amountNoClaim = balances[depositor];
+            if(amountNoClaim > 0){
+              noClaimToken.transfer(depositor, amountNoClaim);
+            }
+          }
+        }
+        // destroy all
+        minter.destroy();
+        redeemer.destroy();
+        selfdestruct(msg.sender);
     }
 
     receive() external payable {}

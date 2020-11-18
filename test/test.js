@@ -126,7 +126,7 @@ describe("### Provide Coverage: Mint NOCLAIM / CLAM and sell CLAIM", () => {
     console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
   });
 
-  it("should allow us using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens - via CoverageProvider Contract", async function() {
+  it("should allow us using 100 DAI to mint Coverage and sell the CLAIM tokens - via CoverageProvider Contract", async function() {
     await setNextTimeStamp();
     daiAmount = 100;
     const txApprove = await dai.approve(coverageProvider.address, ethers.utils.parseEther(daiAmount.toString()));
@@ -195,6 +195,20 @@ describe("### Redeem NOCLAIM after expiry", () => {
     }
     assert(ex);
     //console.log(ex);
+  });
+
+  it("should let the owner of the Coverage Provider Contract (= deployer) send all funds back and destroy the contracts", async function() {
+    balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
+    console.log("NOCLAIM balance (Before): " + ethers.utils.formatEther(balanceNoClaim).toString());
+    let ethBalance = await ethers.provider.getBalance(deployer.getAddress());
+    console.log("Deployer ETH Balance befor: "+ethers.utils.formatEther(ethBalance).toString());
+    await coverageProvider.deactivate();
+    balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
+    console.log("NOCLAIM balance (After): " + ethers.utils.formatEther(balanceNoClaim).toString());
+    const balanaceNoClaimContract = await noClaim.balanceOf(coverageProvider.address);
+    console.log("NOCLAIM balance Contract: " + ethers.utils.formatEther(balanaceNoClaimContract).toString());
+    ethBalance = await ethers.provider.getBalance(deployer.getAddress());
+    console.log("Deployer ETH Balance after: "+ethers.utils.formatEther(ethBalance).toString());
   });
 
   it("should allow to redeem NOCLAIM after expiration date", async function() {
