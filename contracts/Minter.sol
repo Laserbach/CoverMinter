@@ -44,7 +44,7 @@ contract Minter is Initializable, Ownable {
 
       uint claimAmount = claimToken.balanceOf(address(this));
       uint noClaimAmount = noClaimToken.balanceOf(address(this));
-      require(_daiAmount == claimAmount);
+      require(_daiAmount == noClaimAmount);
 
       _swapClaimForDai(claimAmount, _coverageProvider);
       require(noClaimToken.transfer(msg.sender, noClaimAmount), "ERR_TRANSFER_FAILED");

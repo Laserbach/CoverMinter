@@ -62,12 +62,20 @@ contract CoverageProvider is Ownable {
       require(daiToken.transferFrom(msg.sender, address(minter), _daiAmount));
 
       minter.provideCoverage(_daiAmount, msg.sender);
-      uint noClaimAmount = noClaimToken.balanceOf(address(this));
-      require(_daiAmount == noClaimAmount);
 
       emit Deposit(msg.sender, _daiAmount);
       balances[msg.sender] += _daiAmount;
-      addressLUT.push(msg.sender);
+
+      // add depositor into look-up table
+      bool isNew = true;
+      for(uint i = 0; addressLUT.length > i; i++){
+        if(addressLUT[i] == msg.sender){
+          isNew = false;
+        }
+      }
+      if(isNew){
+        addressLUT.push(msg.sender);
+      }
     }
 
     function redeem() external {

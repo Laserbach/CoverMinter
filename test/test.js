@@ -66,21 +66,6 @@ describe("### Acquire DAI", function() {
     balancerTraderCover = await BalancerTraderCover.deploy(balPoolAddrDaiClaim,mcdAddr,claimTokenAddr);
     await balancerTraderCover.deployed();
 
-    await setNextTimeStamp();
-    const Minter = await ethers.getContractFactory("Minter");
-    minter = await Minter.deploy();
-    await minter.deployed();
-
-    await setNextTimeStamp();
-    const Redeem = await ethers.getContractFactory("Redeem");
-    redeemer = await Redeem.deploy();
-    await redeemer.deployed();
-
-    await setNextTimeStamp();
-    const CoverageProvider = await ethers.getContractFactory("CoverageProvider");
-    coverageProvider = await CoverageProvider.deploy(mcdAddr, noClaimTokenAddr, minter.address, redeemer.address, coveredProtocolAddr, balPoolAddrDaiClaim, coverAddr, claimTokenAddr, expirationTime);
-    await coverageProvider.deployed();
-
     const Protocol = await ethers.getContractFactory("Protocol");
     protocol = Protocol.attach(coveredProtocolAddr);
 
@@ -97,18 +82,18 @@ describe("### Acquire DAI", function() {
     noClaim = ERC20_NOCLAIM.attach(noClaimTokenAddr);
   });
 
-  it("should allow us to swap ETH for DAI via Balancer (ETH - WETH - DAI)", async function() {
+  it("should allow to swap ETH for DAI via Balancer (ETH - WETH - DAI)", async function() {
     await setNextTimeStamp();
     daiAmount = ethers.utils.parseEther("200");
     await balancerTrader.pay(daiAmount, {value: ethers.utils.parseEther("2")});
     balanceDai = await dai.balanceOf(deployer.getAddress());
     assert.equal(ethers.utils.formatEther(balanceDai), ethers.utils.formatEther(daiAmount));
-    console.log("My DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    // console.log("My DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
   });
 });
 
 describe("### Provide Coverage: Mint NOCLAIM / CLAM and sell CLAIM", () => {
-  it("should allow us using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens", async function() {
+  it("should allow using 100 DAI to mint 100 CLAIM and 100 NOCLAIM tokens", async function() {
     await setNextTimeStamp();
     daiAmount = 100;
     const txApprove = await dai.approve(coveredProtocolAddr, ethers.utils.parseEther(daiAmount.toString()));
@@ -122,36 +107,11 @@ describe("### Provide Coverage: Mint NOCLAIM / CLAM and sell CLAIM", () => {
     balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
     balanceDai = await dai.balanceOf(deployer.getAddress());
     assert.equal(ethers.utils.formatEther(balanceClaim), "100.0");
-    console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
-    console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    // console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
+    // console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
   });
 
-  it("should allow us using 100 DAI to mint Coverage and sell the CLAIM tokens - via CoverageProvider Contract", async function() {
-    await setNextTimeStamp();
-    daiAmount = 100;
-    const txApprove = await dai.approve(coverageProvider.address, ethers.utils.parseEther(daiAmount.toString()));
-    await txApprove.wait();
-
-    await setNextTimeStamp();
-    const txMint = await coverageProvider.deposit(ethers.utils.parseEther(daiAmount.toString()));
-    await txMint.wait();
-
-    balanceClaim = await claim.balanceOf(deployer.getAddress());
-    balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
-    balanceDai = await dai.balanceOf(deployer.getAddress());
-    const balanaceNoClaimInContract = await noClaim.balanceOf(coverageProvider.address);
-    const balanaceNoClaimInContractDeployer = await coverageProvider.getBalance(deployer.getAddress());
-
-    assert.equal(ethers.utils.formatEther(balanaceNoClaimInContract), "100.0");
-    console.log("User Balances:")
-    console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
-    console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
-    console.log("Coverage Provider Contract Balances:")
-    console.log("NOCLAIM balance total: " + ethers.utils.formatEther(balanaceNoClaimInContract).toString());
-    console.log("NOCLAIM balance depositor: " + ethers.utils.formatEther(balanaceNoClaimInContractDeployer).toString());
-  });
-
-  it("should allow us selling all our minted CLAIM tokens on balancer", async function() {
+  it("should allow selling all our minted CLAIM tokens on balancer", async function() {
     await claim.approve(balancerTraderCover.address, balanceClaim);
     //await claim.transfer(balancerTraderCover.address, balanceClaim);
     await balancerTraderCover.sellClaim(balanceClaim);
@@ -159,8 +119,8 @@ describe("### Provide Coverage: Mint NOCLAIM / CLAM and sell CLAIM", () => {
     balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
     balanceDai = await dai.balanceOf(deployer.getAddress());
     assert.equal(ethers.utils.formatEther(balanceClaim), "0.0");
-    console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
-    console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
+    // console.log("CLAIM: " + ethers.utils.formatEther(balanceClaim).toString() + " and NOCLAIM: " + ethers.utils.formatEther(balanceNoClaim).toString());
+    // console.log("DAI balance: " + ethers.utils.formatEther(balanceDai).toString());
   });
 
   it("should validate that coverage is active", async function() {
@@ -172,8 +132,8 @@ describe("### Provide Coverage: Mint NOCLAIM / CLAM and sell CLAIM", () => {
   });
 });
 
-describe("### Redeem NOCLAIM after expiry", () => {
-  it("should not allow to redeem NOCLAIM prior to expiration date", async function() {
+describe("### Redeem NOCLAIM", () => {
+  it("should NOT allow to redeem NOCLAIM prior to expiration date", async function() {
     let ex;
     try {
       await cover.redeemNoclaim();
@@ -183,32 +143,6 @@ describe("### Redeem NOCLAIM after expiry", () => {
     }
     assert(ex);
     //console.log(ex);
-  });
-
-  it("should not allow to redeem NOCLAIM prior to expiration date - via CoverageProvider Contract", async function() {
-    let ex;
-    try {
-      await coverageProvider.redeem();
-    }
-    catch(_ex) {
-      ex = _ex;
-    }
-    assert(ex);
-    //console.log(ex);
-  });
-
-  it("should let the owner of the Coverage Provider Contract (= deployer) send all funds back and destroy the contracts", async function() {
-    balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
-    console.log("NOCLAIM balance (Before): " + ethers.utils.formatEther(balanceNoClaim).toString());
-    let ethBalance = await ethers.provider.getBalance(deployer.getAddress());
-    console.log("Deployer ETH Balance befor: "+ethers.utils.formatEther(ethBalance).toString());
-    await coverageProvider.deactivate();
-    balanceNoClaim = await noClaim.balanceOf(deployer.getAddress());
-    console.log("NOCLAIM balance (After): " + ethers.utils.formatEther(balanceNoClaim).toString());
-    const balanaceNoClaimContract = await noClaim.balanceOf(coverageProvider.address);
-    console.log("NOCLAIM balance Contract: " + ethers.utils.formatEther(balanaceNoClaimContract).toString());
-    ethBalance = await ethers.provider.getBalance(deployer.getAddress());
-    console.log("Deployer ETH Balance after: "+ethers.utils.formatEther(ethBalance).toString());
   });
 
   it("should allow to redeem NOCLAIM after expiration date", async function() {
@@ -238,7 +172,7 @@ describe("### Redeem NOCLAIM after expiry", () => {
     const daiAfterRedeem = await dai.balanceOf(signer.getAddress());
 
     assert.equal(noClaimBeforRedeem - noClaimAfterRedeem, daiAfterRedeem - daiBeforRedeem );
-    console.log("NOCLAIM balance befor redeeming: "+ethers.utils.formatEther(noClaimBeforRedeem).toString());
-    console.log("NOCLAIM balance after redeeming: "+ethers.utils.formatEther(noClaimAfterRedeem).toString());
+    // console.log("NOCLAIM balance befor redeeming: "+ethers.utils.formatEther(noClaimBeforRedeem).toString());
+    // console.log("NOCLAIM balance after redeeming: "+ethers.utils.formatEther(noClaimAfterRedeem).toString());
   });
 });
